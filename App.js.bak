@@ -1,0 +1,199 @@
+// import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, View, Text, Button} from 'react-native';
+import config from './aws-exports';
+import React from 'react';
+
+// import Amplify, {Auth} from 'aws-amplify'
+// Amplify.configure(config)
+
+
+var AmazonCognitoIdentity = require('amazon-cognito-identity-js');
+// import StorageHelper from './storage-helper-rn.js';
+import AsyncStorage from '@react-native-community/async-storage'
+import Mfa from './Mfa.js'
+import Login from './Login.js'
+import Welcome from './Welcome.js'
+
+// var storage =  AsyncStorage;
+// var storage = new StorageHelper().getStorage();
+// storage.sync(() => {
+//   console.log('finish sync');
+// });
+
+// Amplify.configure({
+//     Auth: {
+
+//         // REQUIRED only for Federated Authentication - Amazon Cognito Identity Pool ID
+//         identityPoolId: config.aws_cognito_identity_pool_id,
+
+//         // REQUIRED - Amazon Cognito Region
+//         region: config.aws_cognito_region,
+
+//         // OPTIONAL - Amazon Cognito Federated Identity Pool Region 
+//         // Required only if it's different from Amazon Cognito Region
+//         identityPoolRegion: config.aws_cognito_region,
+
+//         // OPTIONAL - Amazon Cognito User Pool ID
+//         userPoolId: config.aws_user_pools_id,
+
+//         // OPTIONAL - Amazon Cognito Web Client ID (26-char alphanumeric string)
+//         userPoolWebClientId: config.aws_user_pools_web_client_id,
+
+//         // OPTIONAL - customized storage object
+//         // storage: AsyncStorage,
+
+//          // OPTIONAL - Hosted UI configuration
+//         oauth: config. oauth
+//     }
+// });
+
+
+// function onSendCode(code) {
+//   cognitoUser.sendMFACode(code, _that);
+// }
+
+class Main extends React.Component {
+
+  constructor(props) {
+    super(props);
+    this.state = { stage: 0 };  
+    this.cognitoUser = null;
+    this.submitMFA = this.submitMFA.bind(this);
+    this.nextStage = this.nextStage.bind(this);
+    this.previousStage = this.previousStage.bind(this);
+    this.signIn = this.signIn.bind(this);
+    this.signOut = this.signOut.bind(this);
+    this.onSuccess = this.onSuccess.bind(this);
+    this.redirectToSignInScreen = this.redirectToSignInScreen.bind(this);
+    this.gotoMainScreen = this.gotoMainScreen.bind(this);
+  }
+  
+  submitMFA(code) {
+    console.log("sending " + code + " now");
+    // this.previousStage();
+    this.cognitoUser.sendMFACode(code, this, 'SOFTWARE_TOKEN_MFA');
+    // this.cognitoUser.sendMFACode(code, this);
+  }
+
+  signOut() {
+    console.log("signing user out");
+    this.cognitoUser.signOut();
+    this.redirectToSignInScreen();
+  }
+
+  onSuccess(data) {
+    console.log(data);
+    this.nextStage();
+  }
+
+  onFailure(errConfirm) {
+    console.log(errConfirm);
+  }
+
+  nextStage() {
+    this.setState((state, props) => {
+      return {stage: state.stage + 1};
+    });
+  }
+
+  previousStage() {
+    this.setState((state, props) => {
+      return {stage: state.stage - 1};
+    });
+  }
+
+  gotoStage(_stage) {
+    this.setState((state, props) => {
+      return {stage: _stage};
+    });
+  }
+  
+  redirectToSignInScreen() {
+    this.setState((state, props) => {
+      return {stage: 0};
+    });
+  }
+
+  gotoMainScreen() {
+    this.setState((state, props) => {
+      return {stage: 2};
+    });
+  }
+  
+  signIn(email, password) {
+    var authenticationData = {
+      Username: email, 
+      Password: password,
+    };
+    
+    var authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(
+      authenticationData
+    );
+    
+    var poolData = {
+      UserPoolId: config.aws_user_pools_id, // Your user pool id here
+      ClientId: config.aws_user_pools_web_client_id, // Your client id here
+    };
+    
+    var userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+    var userData = {
+        Username: email, 
+        Pool: userPool,
+        // Storage: storage
+        // Storate: AsyncStorage
+    };
+    this.cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+    var _that = this;
+
+    this.cognitoUser.authenticateUser(authenticationDetails, {
+      onSuccess: function(result) {
+          var accessToken = result.getAccessToken().getJwtToken();
+          console.log(result);
+          _that.gotoMainScreen();
+      },
+      onFailure: function(err) {
+        alert(err.message || JSON.stringify(err));
+      },
+  
+      mfaRequired: function(codeDeliveryDetails) { 
+        console.log("mfaRequired");
+
+        _that.nextStage();
+      },
+
+      totpRequired: function(codeDeliveryDetails) { 
+        console.log("totpRequired");
+        _that.nextStage();
+      }
+    });
+  }
+
+  render() {
+    if (this.state.stage == 0) {
+      return <Login visibility="visible" signInFn={this.signIn}/>
+    } else if (this.state.stage == 1) {
+      return <Mfa sendMFA={this.submitMFA} visibility="visible"/>
+    } else {
+      return <Welcome signOut={this.signOut}/>
+    }
+  }
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});
+
+function App() {
+    return (
+      <View style={styles.container}>
+        <Main/>
+      </View>
+    );
+};
+
+export default App;
