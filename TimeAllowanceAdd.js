@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, Button, TextInput} from 'react-native';
+import { StyleSheet, View, Text, Button, TextInput, SafeAreaView, FlatList} from 'react-native';
 import React, { useState } from 'react';
 import { Redshift } from 'aws-sdk';
 
@@ -34,9 +34,11 @@ const styles = StyleSheet.create({
   body: {
     flex: 10,
     backgroundColor: '#fff',
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: 'center',
+    // flexDirection: "row",
+    // justifyContent: "center",
+    // alignItems: 'flex-start',
+    alignItems: "stretch",
+
     marginLeft: 10,
     marginRight: 10,
     marginBottom: 20,
@@ -62,6 +64,9 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     paddingLeft: 10,
   },
+  _10_view: {
+    flex: 0.1,
+  },
   _70_view: {
     flex: 0.7,
     marginRight: 10,
@@ -79,7 +84,21 @@ const TimeAllowanceAdd = (props) => {
     var [effectiveDate, setEffectiveDate] = useState((new Date()).toLocaleDateString());
     var [note, setNote] = useState("");
 
-
+    const renderItem = ({ item }) => (
+      <View style={{...styles.add_new_item_row, "flex": 0.1}}>
+        <Text style={styles._30_view}>{item.date}</Text>
+        <Text style={styles._30_view}>{item.allowance}</Text>
+        <Text style={styles._30_view}>{item.note}</Text>
+        <View style={styles._10_view}>
+          <Button
+              onPress={() => props.removeAllowance(item.id)}
+              title="x"
+              color="#841584"
+              accessibilityLabel="x"
+          />
+        </View>
+      </View>
+    );
     return (
         <View style={styles.container}>
             <View style={styles.add_new_item_container}>
@@ -111,7 +130,7 @@ const TimeAllowanceAdd = (props) => {
                 </View>
                 <View style={{...styles.add_new_item_row, "alignSelf": "flex-end", "marginRight": 10}}>
                     <Button
-                        onPress={() => props.submitAllowance(allowance,effectiveDate,note)}
+                        onPress={() => props.addAllowance(allowance,effectiveDate,note)}
                         title="Submit"
                         color="#841584"
                         accessibilityLabel="Submit"
@@ -119,7 +138,19 @@ const TimeAllowanceAdd = (props) => {
                 </View>
             </View>
             <View style={styles.body}>
-                <Text>Allowance List</Text>
+              <View style={{...styles.add_new_item_row, "flex": 0.1}}>
+                <Text style={styles._30_view}>Date</Text>
+                <Text style={styles._30_view}>Allowance</Text>
+                <Text style={styles._30_view}>Note</Text>
+                <Text style={styles._10_view}></Text>
+              </View>
+              <SafeAreaView style={{"flex": 0.9}}>
+                <FlatList
+                  data={props.allowances}
+                  renderItem={renderItem}
+                  keyExtractor={item => item.id}
+                />
+              </SafeAreaView>
             </View>
 
         </View>) 

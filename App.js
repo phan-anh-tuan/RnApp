@@ -1,8 +1,8 @@
 // import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Text, Button} from 'react-native';
-import config from './aws-exports';
+import { StyleSheet, View, Button, StatusBar } from 'react-native';
+import config from './aws-exports-dev';
 import React, { useState }from 'react';
-
+var uuid = require('react-native-uuid');
 import { withAuthenticator } from 'aws-amplify-react-native'
 
 import Amplify, {Auth} from 'aws-amplify';
@@ -45,6 +45,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'stretch',
     // justifyContent: 'center',
+    marginTop: StatusBar.currentHeight || 0,
   },
   header: {
     flex: 1,
@@ -68,6 +69,21 @@ const styles = StyleSheet.create({
 
 const App = (props) => {
   var [stage, setStage] = useState("ListTimeAllowances");
+  var [allowances, setAllowances] = useState([
+      { 
+        "id": uuid.v4(),
+        "date": "2020/11/30",
+        "allowance": 40,
+        "note": "tree watering"
+      },
+      {
+        "id": uuid.v4(),
+        "date": "2020/11/29",
+        "allowance": 40,
+        "note": "book reading"
+      }
+    ]);
+
   return (
   <View style={styles.container}>
       <View style={styles.header}>
@@ -76,11 +92,18 @@ const App = (props) => {
             title="Sign Out"
             color="#841584"
             accessibilityLabel="Sign Out"
-            style={{alignItems: "flex-end"}}
+            style={{alignItems: "flex-end", "paddingRight": 20}}
         />
       </View>
       <View style={styles.body}>
-        <TimeAllowanceAdd stage={stage} submitAllowance={(val,_date,note) => console.log("submitting " + val + " minutes for " + _date + " with note " + note)}/>
+        <TimeAllowanceAdd
+          stage={stage}
+          allowances={allowances}
+          removeAllowance={(id) => setAllowances(allowances.filter(item => item.id != id))}
+          addAllowance={(val,_date,note) => {
+            // console.log("submitting " + val + " minutes for " + _date + " with note " + note);
+            setAllowances([{ "id": uuid.v4(), "date": _date, "allowance": val, note},...allowances]);
+          }}/>
       </View>
   </View> 
 )};
