@@ -1,0 +1,9 @@
+{
+	"auth": {
+		"awesomeproject86fd218686fd2186": {
+			"service": "Cognito",
+			"providerPlugin": "awscloudformation",
+			"dependsOn": []
+		}
+	}
+}
