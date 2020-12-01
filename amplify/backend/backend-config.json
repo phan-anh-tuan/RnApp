@@ -5,5 +5,23 @@
 			"providerPlugin": "awscloudformation",
 			"dependsOn": []
 		}
+	},
+	"api": {
+		"awesomeproject": {
+			"service": "AppSync",
+			"providerPlugin": "awscloudformation",
+			"output": {
+				"authConfig": {
+					"defaultAuthentication": {
+						"authenticationType": "API_KEY",
+						"apiKeyConfig": {
+							"apiKeyExpirationDays": 365,
+							"description": "API key used to invoke the graphql"
+						}
+					},
+					"additionalAuthenticationProviders": []
+				}
+			}
+		}
 	}
 }

@@ -1,0 +1,6 @@
+type TimeAllowance @model {
+  id: ID!
+  date: String!
+  allowance: Int!
+  note: String
+}
